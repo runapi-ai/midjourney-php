@@ -13,10 +13,12 @@ use RunApi\Midjourney\MidjourneyClient;
 use RunApi\Midjourney\Models\CompletedImageTaskResponse;
 use RunApi\Midjourney\Models\GetSeedResponse;
 use RunApi\Midjourney\Models\ImageToPromptResponse;
+use RunApi\Midjourney\Models\ShortenPromptResponse;
 use RunApi\Midjourney\Resources\EditImage;
 use RunApi\Midjourney\Resources\GetSeed;
 use RunApi\Midjourney\Resources\ImageToPrompt;
 use RunApi\Midjourney\Resources\ImageToVideo;
+use RunApi\Midjourney\Resources\ShortenPrompt;
 use RunApi\Midjourney\Resources\TextToImage;
 
 final class MidjourneyClientTest extends TestCase
@@ -30,6 +32,7 @@ final class MidjourneyClientTest extends TestCase
         self::assertInstanceOf(EditImage::class, $client->editImage);
         self::assertInstanceOf(GetSeed::class, $client->getSeed);
         self::assertInstanceOf(ImageToPrompt::class, $client->imageToPrompt);
+        self::assertInstanceOf(ShortenPrompt::class, $client->shortenPrompt);
     }
 
     public function testCreatePostsCompactedBodyToCorrectPath(): void
@@ -159,6 +162,24 @@ final class MidjourneyClientTest extends TestCase
         self::assertInstanceOf(ImageToPromptResponse::class, $result);
         self::assertSame('one', $result->prompts[0]);
         self::assertSame('/api/v1/midjourney/image_to_prompt', $transport->requests[0]->getUri()->getPath());
+    }
+
+    public function testShortenPromptRunsSynchronously(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $result = $client->shortenPrompt->run([
+            'prompt' => 'A detailed cinematic mountain landscape',
+        ]);
+        $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertInstanceOf(ShortenPromptResponse::class, $result);
+        self::assertSame(['Concise mountain landscape'], $result->prompts);
+        self::assertSame('/api/v1/midjourney/shorten_prompt', $transport->requests[0]->getUri()->getPath());
+        self::assertSame(['prompt' => 'A detailed cinematic mountain landscape'], $body);
     }
 
     public function testSecondaryResourceUsesItsOwnPath(): void

@@ -61,7 +61,7 @@ URLs as long-term assets.
 ## Language notes
 
 Pass request parameters as associative arrays with snake_case keys. The
-available resources are `textToImage`, `imageToVideo`, `editImage`, `getSeed`, `imageToPrompt`. Keep `RUNAPI_API_KEY` in the environment
+available resources are `textToImage`, `imageToVideo`, `editImage`, `imageToPrompt`, `shortenPrompt`, and `getSeed`. Keep `RUNAPI_API_KEY` in the environment
 or your secret manager; never commit API keys or callback secrets.
 
 ## Links

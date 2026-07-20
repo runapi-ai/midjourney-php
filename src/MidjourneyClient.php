@@ -10,6 +10,7 @@ use RunApi\Midjourney\Resources\EditImage;
 use RunApi\Midjourney\Resources\GetSeed;
 use RunApi\Midjourney\Resources\ImageToPrompt;
 use RunApi\Midjourney\Resources\ImageToVideo;
+use RunApi\Midjourney\Resources\ShortenPrompt;
 use RunApi\Midjourney\Resources\TextToImage;
 
 /**
@@ -30,6 +31,8 @@ final class MidjourneyClient extends BaseClient
     public readonly GetSeed $getSeed;
     /** Image to prompt operations for Midjourney. */
     public readonly ImageToPrompt $imageToPrompt;
+    /** Prompt shortening operations for Midjourney. */
+    public readonly ShortenPrompt $shortenPrompt;
 
     /** Create a Midjourney client with optional API key, base URL, and transport overrides. */
     public function __construct(ClientOptions $options = new ClientOptions())
@@ -40,5 +43,6 @@ final class MidjourneyClient extends BaseClient
         $this->editImage = EditImage::fromHttp($this->http);
         $this->getSeed = GetSeed::fromHttp($this->http);
         $this->imageToPrompt = ImageToPrompt::fromHttp($this->http);
+        $this->shortenPrompt = ShortenPrompt::fromHttp($this->http);
     }
 }

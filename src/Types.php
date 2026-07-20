@@ -41,6 +41,13 @@ final class Types
      */
     public const IMAGE_TO_PROMPT_MODELS = [];
 
+    /**
+     * Allowed model slugs for prompt shortening requests.
+     *
+     * @var list<string>
+     */
+    public const SHORTEN_PROMPT_MODELS = [];
+
     private function __construct()
     {
     }
