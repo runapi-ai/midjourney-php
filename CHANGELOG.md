@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.0](https://github.com/runapi-ai/midjourney-php/releases/tag/v0.3.0) - 2026-07-22
+
+### Added
+- Add a typed extendVideo resource with public request validation and task polling.
+
+
 ## [v0.2.0](https://github.com/runapi-ai/midjourney-php/releases/tag/v0.2.0) - 2026-07-20
 
 ### Added

@@ -21,6 +21,13 @@ final class Types
     public const IMAGE_TO_VIDEO_MODELS = ['midjourney-image-to-video'];
 
     /**
+     * Model used to validate first-video extension requests.
+     *
+     * @var list<string>
+     */
+    public const EXTEND_VIDEO_MODELS = ['midjourney-image-to-video'];
+
+    /**
      * Allowed model slugs for edit image requests.
      *
      * @var list<string>

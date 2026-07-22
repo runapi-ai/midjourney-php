@@ -5,7 +5,7 @@
 
 The Midjourney PHP SDK is the language-specific package for Midjourney
 on RunAPI. Use this package when your application needs Composer installs,
-associative-array request bodies, task status lookup, and consistent RunAPI
+associative-array request bodies, first-video extension, task status lookup, and consistent RunAPI
 errors in PHP.
 
 This README is the PHP package guide for the public `midjourney-php` split
@@ -61,7 +61,7 @@ URLs as long-term assets.
 ## Language notes
 
 Pass request parameters as associative arrays with snake_case keys. The
-available resources are `textToImage`, `imageToVideo`, `editImage`, `imageToPrompt`, `shortenPrompt`, and `getSeed`. Keep `RUNAPI_API_KEY` in the environment
+available resources are `textToImage`, `imageToVideo`, `extendVideo`, `editImage`, `imageToPrompt`, `shortenPrompt`, and `getSeed`. `extendVideo` accepts the task ID of an account-owned completed direct image-to-video task and continues its first video; extension tasks cannot be chained. Keep `RUNAPI_API_KEY` in the environment
 or your secret manager; never commit API keys or callback secrets.
 
 ## Links

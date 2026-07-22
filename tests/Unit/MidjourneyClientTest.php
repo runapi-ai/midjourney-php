@@ -15,6 +15,7 @@ use RunApi\Midjourney\Models\GetSeedResponse;
 use RunApi\Midjourney\Models\ImageToPromptResponse;
 use RunApi\Midjourney\Models\ShortenPromptResponse;
 use RunApi\Midjourney\Resources\EditImage;
+use RunApi\Midjourney\Resources\ExtendVideo;
 use RunApi\Midjourney\Resources\GetSeed;
 use RunApi\Midjourney\Resources\ImageToPrompt;
 use RunApi\Midjourney\Resources\ImageToVideo;
@@ -30,6 +31,7 @@ final class MidjourneyClientTest extends TestCase
         self::assertInstanceOf(TextToImage::class, $client->textToImage);
         self::assertInstanceOf(ImageToVideo::class, $client->imageToVideo);
         self::assertInstanceOf(EditImage::class, $client->editImage);
+        self::assertInstanceOf(ExtendVideo::class, $client->extendVideo);
         self::assertInstanceOf(GetSeed::class, $client->getSeed);
         self::assertInstanceOf(ImageToPrompt::class, $client->imageToPrompt);
         self::assertInstanceOf(ShortenPrompt::class, $client->shortenPrompt);
@@ -199,5 +201,32 @@ final class MidjourneyClientTest extends TestCase
         ]);
 
         self::assertSame('/api/v1/midjourney/image_to_video', $transport->requests[0]->getUri()->getPath());
+    }
+
+    public function testExtendVideoUsesOnlyPublicContinuationFields(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(200, [], '{"id":"task_extend"}'),
+            new Response(200, [], '{"id":"task_extend","status":"completed","videos":[{"url":"https://file.runapi.ai/extended"}]}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $client->extendVideo->create([
+            'source_task_id' => 'task_source',
+            'prompt' => 'Continue the camera orbit',
+            'callback_url' => 'https://example.test/callback',
+        ]);
+        $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertSame('/api/v1/midjourney/extend_video', $transport->requests[0]->getUri()->getPath());
+        self::assertSame([
+            'source_task_id' => 'task_source',
+            'prompt' => 'Continue the camera orbit',
+            'callback_url' => 'https://example.test/callback',
+        ], $body);
+
+        $result = $client->extendVideo->get('task_extend');
+        self::assertSame('https://file.runapi.ai/extended', $result->videos[0]->url);
+        self::assertSame('/api/v1/midjourney/extend_video/task_extend', $transport->requests[1]->getUri()->getPath());
     }
 }
