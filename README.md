@@ -10,8 +10,8 @@ errors in PHP.
 
 This README is the PHP package guide for the public `midjourney-php` split
 repository. For model details, use https://runapi.ai/models/midjourney; for API
-reference, use https://runapi.ai/docs#midjourney; for SDK docs, use
-https://runapi.ai/docs#sdk-midjourney.
+reference, use https://runapi.ai/docs/api/midjourney/text-to-image; for SDK docs, use
+https://runapi.ai/docs/resources/sdks.
 
 ## Install
 
@@ -67,8 +67,8 @@ or your secret manager; never commit API keys or callback secrets.
 ## Links
 
 - Model page: https://runapi.ai/models/midjourney
-- SDK docs: https://runapi.ai/docs#sdk-midjourney
-- Product docs: https://runapi.ai/docs#midjourney
+- SDK docs: https://runapi.ai/docs/resources/sdks
+- Product docs: https://runapi.ai/docs/api/midjourney/text-to-image
 - Pricing and rate limits: https://runapi.ai/models/midjourney/v8.1
 - Full catalog: https://runapi.ai/models
 - GitHub repository: https://github.com/runapi-ai/midjourney-php
