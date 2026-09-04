@@ -7,7 +7,10 @@ namespace RunApi\Midjourney\Tests\Unit;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RunApi\Core\ClientOptions;
+use RunApi\Core\Errors\TaskFailedException;
+use RunApi\Core\Errors\TaskTimeoutException;
 use RunApi\Core\Errors\ValidationException;
+use RunApi\Core\RequestOptions;
 use RunApi\Core\Tests\Fixtures\QueueHttpClient;
 use RunApi\Midjourney\MidjourneyClient;
 use RunApi\Midjourney\Models\CompletedImageTaskResponse;
@@ -182,6 +185,122 @@ final class MidjourneyClientTest extends TestCase
         self::assertSame(['Concise mountain landscape'], $result->prompts);
         self::assertSame('/api/v1/midjourney/shorten_prompt', $transport->requests[0]->getUri()->getPath());
         self::assertSame(['prompt' => 'A detailed cinematic mountain landscape'], $body);
+    }
+
+    public function testShortenPromptFollowsAcceptedTaskToItsTerminalResponse(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => 'https://runapi.ai/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, ['Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $result = $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape']);
+
+        self::assertInstanceOf(ShortenPromptResponse::class, $result);
+        self::assertSame(['Concise mountain landscape'], $result->prompts);
+        self::assertSame('POST', $transport->requests[0]->getMethod());
+        self::assertSame('https://runapi.ai/api/v1/tasks/task_123/result', (string) $transport->requests[1]->getUri());
+        self::assertNotSame('', $transport->requests[0]->getHeaderLine('Idempotency-Key'));
+    }
+
+    public function testShortenPromptSubscribeYieldsProcessingAndTerminalStates(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, ['Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $updates = iterator_to_array($client->shortenPrompt->subscribe(['prompt' => 'A detailed cinematic mountain landscape']));
+
+        self::assertSame(['processing', 'completed'], array_map(static fn ($update): string => $update->status, $updates));
+    }
+
+    public function testShortenPromptReusesGeneratedIdempotencyKeyForTransportRetry(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(503, [], '{"error":"busy"}'),
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 1, retryBaseDelaySeconds: 0.0));
+
+        $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape']);
+
+        self::assertSame($transport->requests[0]->getHeaderLine('Idempotency-Key'), $transport->requests[1]->getHeaderLine('Idempotency-Key'));
+        self::assertNotSame('', $transport->requests[0]->getHeaderLine('Idempotency-Key'));
+    }
+
+    public function testShortenPromptPreservesCallerSuppliedIdempotencyKey(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(503, [], '{"error":"busy"}'),
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 1, retryBaseDelaySeconds: 0.0));
+
+        $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape'], new RequestOptions(headers: ['idempotency-key' => 'caller-key']));
+
+        self::assertSame('caller-key', $transport->requests[0]->getHeaderLine('Idempotency-Key'));
+        self::assertSame('caller-key', $transport->requests[1]->getHeaderLine('Idempotency-Key'));
+    }
+
+    public function testShortenPromptRespectsTaskWaitLimit(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"processing"}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(TaskTimeoutException::class);
+        $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape'], new RequestOptions(maxWaitSeconds: 0.0));
+    }
+
+    public function testShortenPromptDoesNotPollAfterTaskWaitLimit(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, ['Retry-After' => '0.25'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        try {
+            $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape'], new RequestOptions(maxWaitSeconds: 0.05));
+            self::fail('Expected task polling to time out.');
+        } catch (TaskTimeoutException) {
+            self::assertCount(2, $transport->requests);
+        }
+    }
+
+    public function testShortenPromptRaisesStableExceptionForFailedTask(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"failed","response":{"status":500,"content_type":"application/json","headers":{},"body":{"error":"Task processing failed"}}}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $this->expectException(TaskFailedException::class);
+        $this->expectExceptionMessage('Task processing failed');
+
+        $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape']);
+    }
+
+    public function testSubscribePreservesTerminalTaskHeaders(): void
+    {
+        $transport = new QueueHttpClient([
+            new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{"Location":"https://files.runapi.ai/result"},"body":{"prompts":["Concise mountain landscape"]}}}'),
+        ]);
+        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
+
+        $updates = iterator_to_array($client->shortenPrompt->subscribe(['prompt' => 'A detailed cinematic mountain landscape']));
+
+        self::assertSame('https://files.runapi.ai/result', $updates[0]->response->header('location'));
     }
 
     public function testSecondaryResourceUsesItsOwnPath(): void
