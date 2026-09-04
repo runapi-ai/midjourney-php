@@ -54,6 +54,11 @@ task state, and `run()` when a script should create and poll until completion.
 In web request handlers, prefer `create()` plus webhook or later `get()`
 polling so a worker is not held open.
 
+`imageToPrompt`, `shortenPrompt`, and `getSeed` return their terminal response
+directly when available and otherwise follow an accepted Task automatically. To
+observe an accepted `shortenPrompt` Task, iterate over `subscribe()` until its
+terminal update.
+
 RunAPI-generated file URLs are temporary. Download and store generated files
 in your own durable storage within the retention window; do not treat returned
 URLs as long-term assets.
