@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.1](https://github.com/runapi-ai/midjourney-php/releases/tag/v0.3.1) - 2026-09-04
+
+### Changed
+- Return the same terminal helper response whether the request completes directly or through an accepted Task.
+
+
 ## [v0.3.0](https://github.com/runapi-ai/midjourney-php/releases/tag/v0.3.0) - 2026-07-22
 
 ### Added
