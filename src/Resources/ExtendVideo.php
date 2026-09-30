@@ -10,14 +10,11 @@ use RunApi\Core\RequestOptions;
 use RunApi\Core\Resources\TypedConfiguredResource;
 use RunApi\Midjourney\Models\CompletedVideoTaskResponse;
 use RunApi\Midjourney\Models\VideoTaskResponse;
-use RunApi\Midjourney\Types;
 
 /** Extends the first video from a completed Midjourney image-to-video task. */
 readonly class ExtendVideo extends TypedConfiguredResource
 {
     private const ENDPOINT = '/api/v1/midjourney/extend_video';
-    private const ACTION = 'midjourney/extend-video';
-    private const MODEL = 'midjourney-image-to-video';
 
     /**
      * Submit a first-video extension task and return immediately with a task id.
@@ -31,7 +28,6 @@ readonly class ExtendVideo extends TypedConfiguredResource
     public function create(array $params, ?RequestOptions $options = null): TaskCreateResponse
     {
         $params = $this->compact($params);
-        $this->validator->validate(self::ACTION, self::MODEL, ['model' => self::MODEL] + $params);
 
         return TaskCreateResponse::fromArray($this->http->request('post', self::ENDPOINT, [
             'body' => $params,
@@ -71,10 +67,8 @@ readonly class ExtendVideo extends TypedConfiguredResource
         return new self(
             $http,
             self::ENDPOINT,
-            self::ACTION,
             VideoTaskResponse::class,
             CompletedVideoTaskResponse::class,
-            Types::EXTEND_VIDEO_MODELS,
             'extend-video',
             VideoTaskResponse::class,
             CompletedVideoTaskResponse::class,

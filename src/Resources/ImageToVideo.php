@@ -10,7 +10,6 @@ use RunApi\Core\RequestOptions;
 use RunApi\Core\Resources\TypedConfiguredResource;
 use RunApi\Midjourney\Models\CompletedVideoTaskResponse;
 use RunApi\Midjourney\Models\VideoTaskResponse;
-use RunApi\Midjourney\Types;
 
 /** Image to video operations for Midjourney. */
 readonly class ImageToVideo extends TypedConfiguredResource
@@ -69,10 +68,8 @@ readonly class ImageToVideo extends TypedConfiguredResource
         return new self(
             $http,
             '/api/v1/midjourney/image_to_video',
-            'midjourney/image-to-video',
             VideoTaskResponse::class,
             CompletedVideoTaskResponse::class,
-            Types::IMAGE_TO_VIDEO_MODELS,
             'image-to-video',
             VideoTaskResponse::class,
             CompletedVideoTaskResponse::class,

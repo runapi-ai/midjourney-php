@@ -43,8 +43,7 @@ final class MidjourneyClientTest extends TestCase
     public function testCreatePostsCompactedBodyToCorrectPath(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"task_1"}'),
-        ]);
+            new Response(200, [], '{"id":"task_1"}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $task = $client->textToImage->create([
@@ -53,8 +52,7 @@ final class MidjourneyClientTest extends TestCase
             'include_split_images' => true,
             'prompt' => 'A product render',
             'callback_url' => '',
-            'seed' => null,
-        ]);
+            'seed' => null]);
 
         $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
 
@@ -69,16 +67,14 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"task_1"}'),
-            new Response(200, [], '{"id":"task_1","status":"completed","images":[{"url":"https://file.runapi.ai/result"}],"extra_field":"kept"}'),
-        ]);
+            new Response(200, [], '{"id":"task_1","status":"completed","images":[{"url":"https://file.runapi.ai/result"}],"extra_field":"kept","usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->textToImage->run([
             'model' => 'midjourney-v8.1',
             'enable_prompt_translation' => true,
             'include_split_images' => true,
-            'prompt' => 'A product render',
-        ]);
+            'prompt' => 'A product render']);
 
         self::assertInstanceOf(CompletedImageTaskResponse::class, $result);
         self::assertSame('https://file.runapi.ai/result', $result->images[0]->url);
@@ -90,8 +86,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"task_1"}'),
-            new Response(200, [], '{"id":"task_1","status":"completed"}'),
-        ]);
+            new Response(200, [], '{"id":"task_1","status":"completed","usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $this->expectException(ValidationException::class);
@@ -101,36 +96,17 @@ final class MidjourneyClientTest extends TestCase
             'model' => 'midjourney-v8.1',
             'enable_prompt_translation' => true,
             'include_split_images' => true,
-            'prompt' => 'A product render',
-        ]);
+            'prompt' => 'A product render']);
     }
 
-    public function testRejectsInvalidContractEnum(): void
-    {
-        $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: new QueueHttpClient([]), maxRetries: 0));
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('output_resolution must be one of the allowed values');
-
-        $client->imageToVideo->create([
-        'model' => 'midjourney-image-to-video',
-        'enable_loop' => true,
-        'last_frame_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg',
-        'prompt' => 'A product render',
-        'source_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg',
-        'output_resolution' => 'not-valid',
-        ]);
-    }
     public function testGetSeedRunsSynchronously(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"seed":8675309}'),
-        ]);
+            new Response(200, [], '{"seed":8675309}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->getSeed->run([
-            'image_id' => 'sample',
-        ]);
+            'image_id' => 'sample']);
 
         self::assertInstanceOf(GetSeedResponse::class, $result);
         self::assertSame(8675309, $result->seed);
@@ -140,13 +116,11 @@ final class MidjourneyClientTest extends TestCase
     public function testGetSeedPreservesErrorResponseWithoutSeed(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"error":"Seed lookup failed"}'),
-        ]);
+            new Response(200, [], '{"error":"Seed lookup failed"}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->getSeed->run([
-            'image_id' => 'sample',
-        ]);
+            'image_id' => 'sample']);
 
         self::assertInstanceOf(GetSeedResponse::class, $result);
         self::assertNull($result->seed);
@@ -156,13 +130,11 @@ final class MidjourneyClientTest extends TestCase
     public function testImageToPromptRunsSynchronously(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"prompts":["one","two","three","four"]}'),
-        ]);
+            new Response(200, [], '{"prompts":["one","two","three","four"]}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->imageToPrompt->run([
-        'source_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg',
-        ]);
+        'source_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg']);
 
         self::assertInstanceOf(ImageToPromptResponse::class, $result);
         self::assertSame('one', $result->prompts[0]);
@@ -172,13 +144,11 @@ final class MidjourneyClientTest extends TestCase
     public function testShortenPromptRunsSynchronously(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
-        ]);
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->shortenPrompt->run([
-            'prompt' => 'A detailed cinematic mountain landscape',
-        ]);
+            'prompt' => 'A detailed cinematic mountain landscape']);
         $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
 
         self::assertInstanceOf(ShortenPromptResponse::class, $result);
@@ -192,8 +162,7 @@ final class MidjourneyClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => 'https://runapi.ai/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
             new Response(200, ['Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}},"usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $result = $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape']);
@@ -210,8 +179,7 @@ final class MidjourneyClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
             new Response(200, ['Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}},"usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $updates = iterator_to_array($client->shortenPrompt->subscribe(['prompt' => 'A detailed cinematic mountain landscape']));
@@ -223,8 +191,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(503, [], '{"error":"busy"}'),
-            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
-        ]);
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 1, retryBaseDelaySeconds: 0.0));
 
         $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape']);
@@ -237,8 +204,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(503, [], '{"error":"busy"}'),
-            new Response(200, [], '{"prompts":["Concise mountain landscape"]}'),
-        ]);
+            new Response(200, [], '{"prompts":["Concise mountain landscape"]}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 1, retryBaseDelaySeconds: 0.0));
 
         $client->shortenPrompt->run(['prompt' => 'A detailed cinematic mountain landscape'], new RequestOptions(headers: ['idempotency-key' => 'caller-key']));
@@ -251,8 +217,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"processing"}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"processing"}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $this->expectException(TaskTimeoutException::class);
@@ -264,8 +229,7 @@ final class MidjourneyClientTest extends TestCase
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
             new Response(200, ['Retry-After' => '0.25'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}}}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{},"body":{"prompts":["Concise mountain landscape"]}},"usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         try {
@@ -280,8 +244,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"failed","response":{"status":500,"content_type":"application/json","headers":{},"body":{"error":"Task processing failed"}}}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"failed","response":{"status":500,"content_type":"application/json","headers":{},"body":{"error":"Task processing failed"}}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $this->expectException(TaskFailedException::class);
@@ -294,8 +257,7 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(202, ['Location' => '/api/v1/tasks/task_123/result', 'Retry-After' => '0'], '{"id":"task_123","status":"processing"}'),
-            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{"Location":"https://files.runapi.ai/result"},"body":{"prompts":["Concise mountain landscape"]}}}'),
-        ]);
+            new Response(200, [], '{"id":"task_123","status":"completed","response":{"status":200,"content_type":"application/json","headers":{"Location":"https://files.runapi.ai/result"},"body":{"prompts":["Concise mountain landscape"]}},"usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $updates = iterator_to_array($client->shortenPrompt->subscribe(['prompt' => 'A detailed cinematic mountain landscape']));
@@ -306,8 +268,7 @@ final class MidjourneyClientTest extends TestCase
     public function testSecondaryResourceUsesItsOwnPath(): void
     {
         $transport = new QueueHttpClient([
-            new Response(200, [], '{"id":"task_2"}'),
-        ]);
+            new Response(200, [], '{"id":"task_2"}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $client->imageToVideo->create([
@@ -316,8 +277,7 @@ final class MidjourneyClientTest extends TestCase
             'last_frame_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg',
             'output_resolution' => '480p',
             'prompt' => 'A product render',
-            'source_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg',
-        ]);
+            'source_image_url' => 'https://cdn.runapi.ai/public/samples/image.jpg']);
 
         self::assertSame('/api/v1/midjourney/image_to_video', $transport->requests[0]->getUri()->getPath());
     }
@@ -326,23 +286,20 @@ final class MidjourneyClientTest extends TestCase
     {
         $transport = new QueueHttpClient([
             new Response(200, [], '{"id":"task_extend"}'),
-            new Response(200, [], '{"id":"task_extend","status":"completed","videos":[{"url":"https://file.runapi.ai/extended"}]}'),
-        ]);
+            new Response(200, [], '{"id":"task_extend","status":"completed","videos":[{"url":"https://file.runapi.ai/extended"}],"usage":{"cost":0.05}}')]);
         $client = new MidjourneyClient(new ClientOptions(apiKey: 'k', httpClient: $transport, maxRetries: 0));
 
         $client->extendVideo->create([
             'source_task_id' => 'task_source',
             'prompt' => 'Continue the camera orbit',
-            'callback_url' => 'https://example.test/callback',
-        ]);
+            'callback_url' => 'https://example.test/callback']);
         $body = json_decode((string) $transport->requests[0]->getBody(), true, flags: JSON_THROW_ON_ERROR);
 
         self::assertSame('/api/v1/midjourney/extend_video', $transport->requests[0]->getUri()->getPath());
         self::assertSame([
             'source_task_id' => 'task_source',
             'prompt' => 'Continue the camera orbit',
-            'callback_url' => 'https://example.test/callback',
-        ], $body);
+            'callback_url' => 'https://example.test/callback'], $body);
 
         $result = $client->extendVideo->get('task_extend');
         self::assertSame('https://file.runapi.ai/extended', $result->videos[0]->url);

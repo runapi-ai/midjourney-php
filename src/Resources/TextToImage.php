@@ -10,7 +10,6 @@ use RunApi\Core\RequestOptions;
 use RunApi\Core\Resources\TypedConfiguredResource;
 use RunApi\Midjourney\Models\CompletedImageTaskResponse;
 use RunApi\Midjourney\Models\ImageTaskResponse;
-use RunApi\Midjourney\Types;
 
 /** Text to image operations for Midjourney. */
 readonly class TextToImage extends TypedConfiguredResource
@@ -65,10 +64,8 @@ readonly class TextToImage extends TypedConfiguredResource
         return new self(
             $http,
             '/api/v1/midjourney/text_to_image',
-            'midjourney/text-to-image',
             ImageTaskResponse::class,
             CompletedImageTaskResponse::class,
-            Types::TEXT_TO_IMAGE_MODELS,
             'text-to-image',
             ImageTaskResponse::class,
             CompletedImageTaskResponse::class,

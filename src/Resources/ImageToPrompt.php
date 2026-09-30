@@ -32,7 +32,6 @@ readonly class ImageToPrompt extends SyncResource
         return new self(
             $http,
             '/api/v1/midjourney/image_to_prompt',
-            'midjourney/image-to-prompt',
             ImageToPromptResponse::class,
         );
     }

@@ -32,7 +32,6 @@ readonly class GetSeed extends SyncResource
         return new self(
             $http,
             '/api/v1/midjourney/get_seed',
-            'midjourney/get-seed',
             GetSeedResponse::class,
         );
     }

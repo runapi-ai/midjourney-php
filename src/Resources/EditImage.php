@@ -10,7 +10,6 @@ use RunApi\Core\RequestOptions;
 use RunApi\Core\Resources\TypedConfiguredResource;
 use RunApi\Midjourney\Models\CompletedImageTaskResponse;
 use RunApi\Midjourney\Models\ImageTaskResponse;
-use RunApi\Midjourney\Types;
 
 /** Edit image operations for Midjourney. */
 readonly class EditImage extends TypedConfiguredResource
@@ -67,10 +66,8 @@ readonly class EditImage extends TypedConfiguredResource
         return new self(
             $http,
             '/api/v1/midjourney/edit_image',
-            'midjourney/edit-image',
             ImageTaskResponse::class,
             CompletedImageTaskResponse::class,
-            Types::EDIT_IMAGE_MODELS,
             'edit-image',
             ImageTaskResponse::class,
             CompletedImageTaskResponse::class,

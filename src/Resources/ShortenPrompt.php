@@ -26,7 +26,6 @@ readonly class ShortenPrompt extends SyncResource
         return new self(
             $http,
             '/api/v1/midjourney/shorten_prompt',
-            'midjourney/shorten-prompt',
             ShortenPromptResponse::class,
         );
     }
